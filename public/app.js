@@ -1,6 +1,6 @@
 const API =
   window.location.hostname === "localhost"
-    ? "http://localhost:5000"
+    ? "http://localhost:8080"
     : "https://namasenene-farm-system-production-c6e2.up.railway.app";
 
 function qs(id){ return document.getElementById(id); }
@@ -53,4 +53,5 @@ async function api(path, options = {}) {
   return data;
 
 }
+
 
