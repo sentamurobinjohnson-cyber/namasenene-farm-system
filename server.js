@@ -16,7 +16,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1686,3 +1686,4 @@ initDb()
     process.exit(1);
 
   });
+
