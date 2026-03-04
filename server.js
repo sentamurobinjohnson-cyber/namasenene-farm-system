@@ -536,7 +536,7 @@ app.get("/api/reports/stock-enriched", auth, async (req, res) => {
 // =====================
 // EXPENSES
 // =====================
-app.get("/api/expenses", auth, async (req, res) => {
+app.get("/api/expenses", async (req, res) => {
   try {
     const rows = await all(
       `SELECT * FROM expenses ORDER BY expense_date DESC, id DESC`
@@ -547,7 +547,7 @@ app.get("/api/expenses", auth, async (req, res) => {
   }
 });
 
-app.post("/api/expenses", auth, async (req, res) => {
+app.post("/api/expenses", async (req, res) => {
   try {
     const {
       expense_date,
@@ -617,7 +617,7 @@ app.post("/api/expenses", auth, async (req, res) => {
   }
 });
 
-app.put("/api/expenses/:id", auth, async (req, res) => {
+app.put("/api/expenses/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
 
@@ -1695,6 +1695,7 @@ initDb()
     console.error("❌ Failed to init DB:", e);
     process.exit(1);
   });
+
 
 
 
