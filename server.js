@@ -15,10 +15,9 @@ app.use(cors({
   origin: "*"
 }));
 app.use(express.json());
+// Serve frontend
+app.use(express.static(path.join(__dirname, "public")));
 // Add routes here
-app.get("/", (req, res) => {
-  res.send("Namasenene Farm API running 🚜");
-});
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
@@ -1694,6 +1693,7 @@ initDb()
     console.error("❌ Failed to init DB:", e);
     process.exit(1);
   });
+
 
 
 
