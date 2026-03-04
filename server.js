@@ -15,7 +15,14 @@ app.use(cors({
   origin: "*"
 }));
 app.use(express.json());
+// Add routes here
+app.get("/", (req, res) => {
+  res.send("Namasenene Farm API running 🚜");
+});
 
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
 const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
 
@@ -1686,5 +1693,6 @@ initDb()
     process.exit(1);
 
   });
+
 
 
