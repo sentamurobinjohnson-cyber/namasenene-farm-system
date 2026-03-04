@@ -420,7 +420,7 @@ app.post("/api/harvests", auth, async (req, res) => {
 // =====================
 // DASHBOARD SUMMARY
 // =====================
-app.get("/api/dashboard/summary", auth, async (req, res) => {
+app.get("/api/dashboard/summary", async (req, res) => {
   try {
     const revenueRow = await one(
       `
@@ -1695,6 +1695,7 @@ initDb()
     console.error("❌ Failed to init DB:", e);
     process.exit(1);
   });
+
 
 
 
