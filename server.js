@@ -28,8 +28,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
-const PORT = process.env.PORT || 8080;
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
+
 
 
 
@@ -1696,6 +1695,7 @@ initDb()
     console.error("❌ Failed to init DB:", e);
     process.exit(1);
   });
+
 
 
 
