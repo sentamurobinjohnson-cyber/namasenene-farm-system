@@ -1,4 +1,4 @@
-const API = "http://localhost:5000";
+const API = "https://namasenene-farm-system-production-c6e2.up.railway.app";
 
 function qs(id){ return document.getElementById(id); }
 
@@ -48,4 +48,5 @@ async function api(path, options = {}) {
   }
 
   return data;
+
 }
