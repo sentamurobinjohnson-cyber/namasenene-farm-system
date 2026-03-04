@@ -1686,13 +1686,13 @@ app.post("/api/inventory/movements", auth, async (req, res) => {
 // -----------------------------
 initDb()
   .then(() => {
-    app.listen(PORT, "0.0.0.0", () => console.log(`✅ Server running on port ${PORT}`));
+    app.listen(PORT, "0.0.0.0", () => {console.log(`✅ Server running on port ${PORT}`));
   })
   .catch((e) => {
     console.error("❌ Failed to init DB:", e);
     process.exit(1);
-
   });
+
 
 
 
