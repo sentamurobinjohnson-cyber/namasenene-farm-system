@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>NFMS Dashboard</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">Namasenene Farm <small>Farm Overview</small></div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="crops.html">Crops</a>
+      <a href="livestock.html">Livestock</a>
+      <a href="supplies.html">Supplies</a>
+      <a href="expenses.html">Expenses</a>
+      <a href="sales.html">Sales</a>
+      <a href="reports.html">Reports</a>
+      <button class="danger" onclick="logout()">Logout</button>
+    </div>
+  </div>
+  <div class="grid-3" id="dashCards">
+  <div class="card">
+    <div class="label">Revenue</div>
+    <div class="value" id="revVal">--</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Expenses</div>
+    <div class="value" id="expVal">--</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Profit</div>
+    <div class="value" id="profitVal">--</div>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-top:12px">
+  <div class="card">
+    <div class="label">Sales Tax</div>
+    <div class="value" id="salesTaxVal">--</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Expense Tax</div>
+    <div class="value" id="expTaxVal">--</div>
+  </div>
+</div>
+
+  <div class="container">
+    <div class="grid">
+      <div class="card third">
+        <h2>Profit (latest month)</h2>
+        <h1 id="profit">$0</h1>
+        <p id="month" class="badge"></p>
+      </div>
+      <div class="card third">
+        <h2>Revenue (latest month)</h2>
+        <h1 id="rev">$0</h1>
+      </div>
+      <div class="card third">
+        <h2>Expenses (latest month)</h2>
+        <h1 id="exp">$0</h1>
+      </div>
+
+      <div class="card half">
+        <h2>Sales by Channel</h2>
+        <table id="chTable">
+          <thead><tr><th>Channel</th><th>Revenue</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card half">
+        <h2>Stock On Hand (snapshot)</h2>
+        <table id="stockTable">
+          <thead><tr><th>Type</th><th>ID</th><th>Qty</th><th>Unit</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="badge">Tip: Stock stays correct because NFMS uses movement-based inventory.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+  <script>
+    function fmtMoney(n){
+  const x = Number(n || 0);
+  return "Ug Shs " + x.toLocaleString("en-UG", { maximumFractionDigits: 0 });
+}
+    (async () => {
+      const summary = await api("/api/dashboard/summary");
+
+// "month" doesn't exist for totals, so show a label
+if (qs("month")) qs("month").textContent = "TOTALS";
+
+qs("profit").textContent = fmtMoney(summary.profit);
+qs("rev").textContent = fmtMoney(summary.revenue);
+qs("exp").textContent = fmtMoney(summary.expenses);
+
+      const ch = await api("/api/reports/sales-by-channel");
+      const tb = qs("chTable").querySelector("tbody");
+      tb.innerHTML = ch.map(r => `<tr><td>${r.channel}</td><td>${fmtMoney(r.revenue)}</td></tr>`).join("");
+
+      const stock = await api("/api/reports/stock");
+      const st = qs("stockTable").querySelector("tbody");
+      st.innerHTML = stock.slice(0, 25).map(r =>
+        `<tr><td>${r.item_type}</td><td>${r.item_id}</td><td>${Number(r.qty_on_hand).toFixed(2)}</td><td>${r.unit}</td></tr>`
+      ).join("");
+    })();
+  </script>
+</body>
+</html>

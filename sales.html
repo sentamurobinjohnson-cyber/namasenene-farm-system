@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Sales • Namasenene Farm</title>
+  <link rel="stylesheet" href="assets/styles.css"/>
+  <style>
+    body { background:#0b1220; color:#e5e7eb; font-family: system-ui, Arial; }
+    .wrap { max-width: 1100px; margin: 24px auto; padding: 0 14px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .grid { display:grid; grid-template-columns: 380px 1fr; gap: 14px; }
+    .card { background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px; }
+    h1,h2 { margin: 0 0 10px; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    label { font-size:12px; opacity:.85; display:block; margin-bottom:6px; }
+    input, select, textarea {
+      width:100%; padding:10px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.12);
+      background:#0b1220; color:#e5e7eb;
+      outline:none;
+    }
+    textarea { min-height: 90px; }
+    .btns { display:flex; gap:10px; margin-top:10px; }
+    button {
+      padding:10px 14px; border-radius:10px; border:0; cursor:pointer;
+      background:#2563eb; color:white; font-weight:600;
+    }
+    button.secondary { background:#334155; }
+    button.danger { background:#ef4444; }
+    .kpis { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom: 14px; }
+    .kpi { background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px; }
+    .kpi .big { font-size: 22px; font-weight: 800; margin-top:6px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); font-size: 13px; }
+    th { text-align:left; opacity:.8; }
+    .items { margin-top:10px; }
+    .items-head { display:flex; align-items:center; justify-content:space-between; margin: 8px 0; }
+    .pill { font-size: 12px; padding:4px 8px; border-radius:999px; background:#111827; border:1px solid rgba(255,255,255,.1); }
+    .muted { opacity: .7; font-size:12px; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>Sales</h1>
+        <div class="muted">Records are saved in <code>sales</code> and <code>sale_items</code>.</div>
+      </div>
+      <div class="muted">
+        <button class="secondary" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">
+        <div class="muted">Total Revenue</div>
+        <div class="big" id="kpiRevenue">UGX 0</div>
+      </div>
+      <div class="kpi">
+        <div class="muted">Sales Tax</div>
+        <div class="big" id="kpiSalesTax">UGX 0</div>
+      </div>
+      <div class="kpi">
+        <div class="muted"># Sales</div>
+        <div class="big" id="kpiCount">0</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: Add Sale -->
+      <div class="card">
+        <h2>Add Sale</h2>
+
+        <div class="row">
+          <div>
+            <label>Date</label>
+            <input type="date" id="sale_date"/>
+          </div>
+
+          <div>
+            <label>Channel</label>
+            <select id="channel">
+              <option value="farmers_market">Farmers Market</option>
+              <option value="csa">CSA</option>
+              <option value="wholesale">Wholesale</option>
+              <option value="online">Online</option>
+              <option value="farm_stand">Farm Stand</option>
+              <option value="u_pick">U-Pick</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>Customer</label>
+            <select id="customer_id"></select>
+            <div class="muted" style="margin-top:6px;">Optional. Add customers below.</div>
+          </div>
+
+          <div>
+            <label>Payment Method</label>
+            <select id="payment_method">
+              <option value="cash">Cash</option>
+              <option value="mobile_money">Mobile Money</option>
+              <option value="bank">Bank</option>
+              <option value="card">Card</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>Delivery Method</label>
+            <select id="delivery_method">
+              <option value="pickup">Pickup</option>
+              <option value="delivery">Delivery</option>
+              <option value="shipped">Shipped</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Status</label>
+            <select id="status">
+              <option value="completed">Completed</option>
+              <option value="draft">Draft</option>
+              <option value="refunded">Refunded</option>
+              <option value="void">Void</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="items">
+          <div class="items-head">
+            <div><b>Sale Items</b> <span class="pill" id="itemsCount">0 items</span></div>
+            <button class="secondary" id="addItemBtn" type="button">+ Add Item</button>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th style="width:90px;">Qty</th>
+                <th style="width:90px;">Unit</th>
+                <th style="width:120px;">Price</th>
+                <th style="width:120px;">Subtotal</th>
+                <th style="width:60px;"></th>
+              </tr>
+            </thead>
+            <tbody id="itemsTbody"></tbody>
+          </table>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>Tax Amount</label>
+            <input type="number" step="0.01" id="tax_amount" value="0"/>
+          </div>
+          <div>
+            <label>Total Amount</label>
+            <input type="number" step="0.01" id="total_amount" value="0"/>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;">
+          <label>Notes</label>
+          <textarea id="notes" placeholder="Optional notes..."></textarea>
+        </div>
+
+        <div class="btns">
+          <button id="saveSaleBtn" type="button">Save Sale</button>
+          <button class="secondary" id="resetBtn" type="button">Reset</button>
+        </div>
+
+        <hr style="border:0;border-top:1px solid rgba(255,255,255,.08); margin:14px 0"/>
+
+        <h2 style="margin-bottom:8px;">Add Customer</h2>
+        <div class="row">
+          <div>
+            <label>Name</label>
+            <input id="cust_name" placeholder="Customer name"/>
+          </div>
+          <div>
+            <label>Type</label>
+            <select id="cust_type">
+              <option value="retail">Retail</option>
+              <option value="wholesale">Wholesale</option>
+              <option value="csa">CSA</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>Phone</label>
+            <input id="cust_phone" placeholder="Optional"/>
+          </div>
+          <div>
+            <label>Email</label>
+            <input id="cust_email" placeholder="Optional"/>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button class="secondary" id="addCustomerBtn" type="button">Add Customer</button>
+        </div>
+
+        <div class="muted" id="msg" style="margin-top:10px;"></div>
+      </div>
+
+      <!-- RIGHT: Sales list -->
+      <div class="card">
+        <div style="display:flex; gap:10px; align-items:center; justify-content:space-between;">
+          <h2>Recent Sales</h2>
+          <input id="search" placeholder="Search customer/notes/channel..." style="max-width: 320px;">
+        </div>
+
+        <table style="margin-top:10px;">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Channel</th>
+              <th>Customer</th>
+              <th>Total</th>
+              <th>Tax</th>
+              <th>Payment</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="salesTbody">
+            <tr><td colspan="7" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- uses your existing token-aware api() helper -->
+  <script src="assets/app.js"></script>
+  <script>
+    const UGX = new Intl.NumberFormat("en-UG", { style:"currency", currency:"UGX", maximumFractionDigits:0 });
+
+    function fmtUGX(n){
+      const x = Number(n || 0);
+      return UGX.format(isNaN(x) ? 0 : x);
+    }
+
+    function todayISO(){
+      const d = new Date();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return `${d.getFullYear()}-${m}-${day}`;
+    }
+
+    let items = [];
+
+    function renderItems(){
+      qs("itemsCount").textContent = `${items.length} items`;
+      const tb = qs("itemsTbody");
+      tb.innerHTML = items.map((it, idx) => {
+        const subtotal = (Number(it.quantity||0) * Number(it.price_per_unit||0)) || 0;
+        return `
+          <tr>
+            <td><input data-k="description" data-i="${idx}" value="${it.description||""}" placeholder="e.g., Eggs tray / Coffee kg"/></td>
+            <td><input data-k="quantity" data-i="${idx}" type="number" step="0.01" value="${it.quantity ?? 1}"/></td>
+            <td><input data-k="unit" data-i="${idx}" value="${it.unit||"unit"}" placeholder="kg, tray, pcs"/></td>
+            <td><input data-k="price_per_unit" data-i="${idx}" type="number" step="0.01" value="${it.price_per_unit ?? 0}"/></td>
+            <td>${fmtUGX(subtotal)}</td>
+            <td><button class="danger" data-del="${idx}" type="button">X</button></td>
+          </tr>
+        `;
+      }).join("");
+
+      tb.querySelectorAll("input").forEach(inp => {
+        inp.addEventListener("input", e => {
+          const i = Number(e.target.dataset.i);
+          const k = e.target.dataset.k;
+          items[i][k] = e.target.type === "number" ? Number(e.target.value) : e.target.value;
+          recalcTotals();
+          renderItems();
+        });
+      });
+
+      tb.querySelectorAll("button[data-del]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const i = Number(btn.dataset.del);
+          items.splice(i,1);
+          recalcTotals();
+          renderItems();
+        });
+      });
+    }
+
+    function recalcTotals(){
+      const itemsTotal = items.reduce((sum, it) => sum + (Number(it.quantity||0) * Number(it.price_per_unit||0)), 0);
+      const tax = Number(qs("tax_amount").value || 0);
+      qs("total_amount").value = (itemsTotal + tax).toFixed(2);
+    }
+
+    function resetForm(){
+      qs("sale_date").value = todayISO();
+      qs("channel").value = "farmers_market";
+      qs("payment_method").value = "cash";
+      qs("delivery_method").value = "pickup";
+      qs("status").value = "completed";
+      qs("tax_amount").value = "0";
+      qs("total_amount").value = "0";
+      qs("notes").value = "";
+      items = [];
+      renderItems();
+      qs("msg").textContent = "";
+    }
+
+    async function refresh(){
+      // KPIs from dashboard summary (you already have this route)
+      try{
+        const s = await api("/api/dashboard/summary");
+        qs("kpiRevenue").textContent = fmtUGX(s.revenue);
+        qs("kpiSalesTax").textContent = fmtUGX(s.sales_tax);
+      } catch(e){ /* ignore */ }
+
+      // Customers
+      try{
+        const customers = await api("/api/customers");
+        const sel = qs("customer_id");
+        sel.innerHTML = `<option value="">(No customer)</option>` + customers.map(c =>
+          `<option value="${c.id}">${c.name} (${c.type})</option>`
+        ).join("");
+      } catch(e){
+        qs("customer_id").innerHTML = `<option value="">(No customer)</option>`;
+      }
+
+      // Sales list
+      try{
+        const sales = await api("/api/sales");
+        qs("kpiCount").textContent = String(sales.length);
+
+        window.__sales = sales;
+        renderSales(sales);
+      } catch(e){
+        qs("salesTbody").innerHTML = `<tr><td colspan="7" class="muted">No sales yet (or /api/sales not implemented).</td></tr>`;
+        qs("kpiCount").textContent = "0";
+      }
+    }
+
+    function renderSales(list){
+      const tb = qs("salesTbody");
+      if(!list.length){
+        tb.innerHTML = `<tr><td colspan="7" class="muted">No sales found.</td></tr>`;
+        return;
+      }
+      tb.innerHTML = list.map(s => `
+        <tr>
+          <td>${s.sale_date}</td>
+          <td>${s.channel}</td>
+          <td>${s.customer_name || "-"}</td>
+          <td>${fmtUGX(s.total_amount)}</td>
+          <td>${fmtUGX(s.tax_amount)}</td>
+          <td>${s.payment_method}</td>
+          <td>${s.status}</td>
+        </tr>
+      `).join("");
+    }
+
+    // UI events
+    qs("addItemBtn").onclick = () => {
+      items.push({ description:"", quantity:1, unit:"unit", price_per_unit:0 });
+      renderItems();
+      recalcTotals();
+    };
+
+    qs("tax_amount").addEventListener("input", () => recalcTotals());
+
+    qs("resetBtn").onclick = () => resetForm();
+
+    qs("logoutBtn").onclick = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    };
+
+    qs("addCustomerBtn").onclick = async () => {
+      try{
+        const name = qs("cust_name").value.trim();
+        const type = qs("cust_type").value;
+        if(!name) return qs("msg").textContent = "Customer name is required.";
+
+        const body = {
+          name, type,
+          phone: qs("cust_phone").value.trim() || null,
+          email: qs("cust_email").value.trim() || null,
+          address: null
+        };
+
+        await api("/api/customers", { method:"POST", body });
+        qs("cust_name").value = "";
+        qs("cust_phone").value = "";
+        qs("cust_email").value = "";
+        qs("msg").textContent = "✅ Customer added.";
+        await refresh();
+      } catch(e){
+        qs("msg").textContent = "❌ Failed to add customer: " + e.message;
+      }
+    };
+
+    qs("saveSaleBtn").onclick = async () => {
+      try{
+        const sale_date = qs("sale_date").value;
+        const channel = qs("channel").value;
+        const customer_id = qs("customer_id").value ? Number(qs("customer_id").value) : null;
+        const tax_amount = Number(qs("tax_amount").value || 0);
+        const total_amount = Number(qs("total_amount").value || 0);
+
+        if(!sale_date || !channel) return qs("msg").textContent = "Date + channel are required.";
+        if(!items.length) return qs("msg").textContent = "Add at least 1 sale item.";
+
+        const payload = {
+          sale_date,
+          customer_id,
+          channel,
+          payment_method: qs("payment_method").value,
+          delivery_method: qs("delivery_method").value,
+          status: qs("status").value,
+          tax_amount,
+          total_amount,
+          notes: qs("notes").value.trim() || null,
+          items: items.map(it => ({
+            product_type: "other",
+            product_id: null,
+            description: it.description || "",
+            quantity: Number(it.quantity || 0),
+            unit: it.unit || "unit",
+            price_per_unit: Number(it.price_per_unit || 0)
+          }))
+        };
+
+        await api("/api/sales", { method:"POST", body: payload });
+        qs("msg").textContent = "✅ Sale saved.";
+        resetForm();
+        await refresh();
+      } catch(e){
+        qs("msg").textContent = "❌ Failed to save sale: " + e.message;
+      }
+    };
+
+    qs("search").addEventListener("input", () => {
+      const q = qs("search").value.toLowerCase().trim();
+      const all = window.__sales || [];
+      const filtered = !q ? all : all.filter(s =>
+        String(s.channel||"").toLowerCase().includes(q) ||
+        String(s.customer_name||"").toLowerCase().includes(q) ||
+        String(s.notes||"").toLowerCase().includes(q)
+      );
+      renderSales(filtered);
+    });
+
+    // init
+    resetForm();
+    refresh();
+  </script>
+</body>
+</html>

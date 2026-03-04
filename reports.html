@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Reports • Namasenene Farm</title>
+  <link rel="stylesheet" href="assets/styles.css"/>
+  <style>
+    body { background:#0b1220; color:#e5e7eb; font-family: system-ui, Arial; }
+    .wrap { max-width: 1250px; margin: 24px auto; padding: 0 14px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .card { background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px; }
+    .kpis { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:14px; }
+    .kpi { background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px; }
+    .kpi .label { opacity:.75; font-size:12px; }
+    .kpi .big { font-size:22px; font-weight:800; margin-top:6px; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+    h1,h2 { margin:0 0 10px; }
+    .muted { opacity:.7; font-size:12px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); font-size: 13px; vertical-align: top; }
+    th { text-align:left; opacity:.8; }
+    .pill { font-size: 12px; padding:4px 8px; border-radius:999px; background:#111827; border:1px solid rgba(255,255,255,.1); }
+    .row { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap: wrap; }
+    input, select {
+      padding:10px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.12);
+      background:#0b1220; color:#e5e7eb;
+      outline:none;
+    }
+    button{
+      padding:10px 14px; border-radius:10px; border:0; cursor:pointer;
+      background:#2563eb; color:white; font-weight:600;
+    }
+    button.secondary{ background:#334155; }
+    .span2 { grid-column: span 2; }
+    @media (max-width: 1000px){
+      .kpis { grid-template-columns: 1fr 1fr; }
+      .grid { grid-template-columns: 1fr; }
+      .span2 { grid-column: auto; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>Reports</h1>
+        <div class="muted">Sales, expenses, stock, and monthly profit & loss.</div>
+      </div>
+      <div class="row">
+        <span class="pill" id="msg"></span>
+        <button class="secondary" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpis">
+      <div class="kpi">
+        <div class="label">Revenue</div>
+        <div class="big" id="kRevenue">—</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Expenses</div>
+        <div class="big" id="kExpenses">—</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Profit</div>
+        <div class="big" id="kProfit">—</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Tax (Sales / Expense)</div>
+        <div class="big" id="kTax">—</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- SALES BY CHANNEL -->
+      <div class="card">
+        <div class="row">
+          <h2>Sales by Channel</h2>
+          <button id="refreshBtn" type="button">Refresh</button>
+        </div>
+        <table style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Channel</th>
+              <th>Total Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="chTable">
+            <tr><td colspan="2" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- STOCK ON HAND -->
+      <div class="card">
+        <div class="row">
+          <h2>Stock on Hand</h2>
+          <input id="stockSearch" placeholder="Search item_type / item_id / unit..." style="max-width:260px;">
+        </div>
+        <table style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>ID</th>
+              <th>Qty</th>
+              <th>Unit</th>
+            </tr>
+          </thead>
+          <tbody id="stockTable">
+            <tr><td colspan="4" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+        <div class="muted" style="margin-top:8px;">Shows inventory movements summed (in - out).</div>
+      </div>
+
+      <!-- P&L BY MONTH (optional route) -->
+      <div class="card span2">
+        <div class="row">
+          <h2>P&L by Month</h2>
+          <span class="muted">If you don’t have this endpoint yet, add the backend route below.</span>
+        </div>
+        <table style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Revenue</th>
+              <th>Expenses</th>
+              <th>Profit</th>
+            </tr>
+          </thead>
+          <tbody id="pnlTable">
+            <tr><td colspan="4" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+  <script>
+    function showMsg(t){ document.getElementById("msg").textContent = t || ""; }
+
+    // ====== Currency formatting (Ug Shs) ======
+    function ugx(n){
+      const x = Number(n || 0);
+      return "UGX " + x.toLocaleString("en-UG", { maximumFractionDigits: 0 });
+    }
+
+    document.getElementById("logoutBtn").onclick = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    };
+
+    let stockCache = [];
+
+    function renderStock(list){
+      const tb = document.getElementById("stockTable");
+      if(!list.length){
+        tb.innerHTML = `<tr><td colspan="4" class="muted">No stock rows.</td></tr>`;
+        return;
+      }
+      tb.innerHTML = list.slice(0, 200).map(r => `
+        <tr>
+          <td>${r.item_type}</td>
+          <td>${r.item_id}</td>
+          <td>${Number(r.qty_on_hand || 0).toFixed(2)}</td>
+          <td>${r.unit}</td>
+        </tr>
+      `).join("");
+    }
+
+    function applyStockSearch(){
+      const q = (document.getElementById("stockSearch").value || "").toLowerCase().trim();
+      if(!q) return renderStock(stockCache);
+      const filtered = stockCache.filter(r =>
+        `${r.item_type} ${r.item_id} ${r.unit}`.toLowerCase().includes(q)
+      );
+      renderStock(filtered);
+    }
+
+    async function loadAll(){
+      try{
+        showMsg("Loading...");
+
+        // Dashboard summary (revenue, expenses, profit)
+        const sum = await api("/api/dashboard/summary");
+        document.getElementById("kRevenue").textContent = ugx(sum.revenue);
+        document.getElementById("kExpenses").textContent = ugx(sum.expenses);
+        document.getElementById("kProfit").textContent = ugx(sum.profit);
+        document.getElementById("kTax").textContent = `${ugx(sum.sales_tax)} / ${ugx(sum.expense_tax)}`;
+
+        // Sales by channel
+        const ch = await api("/api/reports/sales-by-channel");
+        const chTb = document.getElementById("chTable");
+        chTb.innerHTML = ch.length ? ch.map(r => `
+          <tr>
+            <td>${r.channel}</td>
+            <td>${ugx(r.revenue)}</td>
+          </tr>
+        `).join("") : `<tr><td colspan="2" class="muted">No sales yet.</td></tr>`;
+
+        // Stock
+        const stock = await api("/api/reports/stock");
+        stockCache = stock || [];
+        applyStockSearch();
+
+        // P&L by month (optional)
+        const pnlTb = document.getElementById("pnlTable");
+        try{
+          const pnl = await api("/api/reports/pnl-by-month");
+          pnlTb.innerHTML = pnl.length ? pnl.map(r => `
+            <tr>
+              <td>${r.month}</td>
+              <td>${ugx(r.revenue)}</td>
+              <td>${ugx(r.expenses)}</td>
+              <td>${ugx(r.profit)}</td>
+            </tr>
+          `).join("") : `<tr><td colspan="4" class="muted">No monthly P&L yet.</td></tr>`;
+        } catch {
+          pnlTb.innerHTML = `
+            <tr>
+              <td colspan="4" class="muted">
+                Endpoint <b>/api/reports/pnl-by-month</b> not found. Add it in the backend.
+              </td>
+            </tr>`;
+        }
+
+        showMsg("✅ Loaded");
+      } catch(e){
+        showMsg("❌ " + e.message);
+      }
+    }
+
+    document.getElementById("refreshBtn").onclick = loadAll;
+    document.getElementById("stockSearch").addEventListener("input", applyStockSearch);
+
+    loadAll();
+  </script>
+</body>
+</html>

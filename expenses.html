@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Namasenene Farm — Expenses</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background:#f6f7fb; color:#111; }
+    header { background:#0f172a; color:#fff; padding: 14px 16px; display:flex; align-items:center; justify-content:space-between; }
+    header .left { display:flex; gap:10px; align-items:center; }
+    header a { color:#fff; text-decoration:none; opacity:.9; }
+    header a:hover { opacity:1; text-decoration:underline; }
+    .wrap { max-width: 1100px; margin: 16px auto; padding: 0 12px; }
+
+    .grid { display:grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 900px){
+      .grid { grid-template-columns: 380px 1fr; align-items:start; }
+    }
+
+    .card { background:#fff; border:1px solid #e6e8ef; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+    .card h2 { margin:0; padding: 12px 14px; border-bottom:1px solid #eef0f6; font-size: 16px; }
+    .card .body { padding: 12px 14px; }
+
+    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .row > * { flex: 1; min-width: 140px; }
+    label { font-size: 12px; color:#334155; display:block; margin-bottom: 4px; }
+    input, select, textarea {
+      width: 100%; padding: 10px 10px; border: 1px solid #d8dbe6;
+      border-radius: 10px; outline:none; background:#fff;
+    }
+    textarea { min-height: 88px; resize: vertical; }
+    input:focus, select:focus, textarea:focus { border-color:#64748b; }
+
+    .btns { display:flex; gap:10px; margin-top: 10px; }
+    button {
+      border: 0; border-radius: 10px; padding: 10px 12px;
+      cursor:pointer; font-weight:600;
+    }
+    .primary { background:#0ea5e9; color:#fff; }
+    .primary:hover { filter: brightness(.95); }
+    .ghost { background:#e2e8f0; color:#0f172a; }
+    .danger { background:#ef4444; color:#fff; }
+    .danger:hover { filter: brightness(.95); }
+
+    .kpis { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .kpi { padding: 12px; border-radius: 12px; background:#0b1220; color:#fff; }
+    .kpi .label { font-size: 12px; opacity:.85; }
+    .kpi .value { font-size: 22px; font-weight: 800; margin-top:4px; }
+
+    .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between; padding: 12px 14px; border-bottom:1px solid #eef0f6; }
+    .toolbar .left { display:flex; gap:10px; flex-wrap:wrap; }
+    .toolbar input { max-width: 280px; }
+    .muted { color:#64748b; font-size: 12px; }
+
+    table { width:100%; border-collapse: collapse; }
+    th, td { padding: 10px 10px; border-bottom: 1px solid #eef0f6; text-align:left; font-size: 14px; }
+    th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color:#475569; background:#fbfcff; }
+    tr:hover td { background:#fbfdff; }
+    .right { text-align:right; }
+    .pill { display:inline-block; padding: 4px 8px; border-radius: 999px; background:#eef2ff; color:#3730a3; font-size:12px; }
+    .status { font-size: 12px; margin-top: 8px; }
+    .status.ok { color:#16a34a; }
+    .status.err { color:#dc2626; }
+    .actions { display:flex; gap:8px; justify-content:flex-end; }
+    .linkbtn { background:#e2e8f0; color:#0f172a; padding: 7px 10px; border-radius:10px; font-weight:700; }
+    .linkbtn:hover { filter: brightness(.97); }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="left">
+      <strong>🚜 Namasenene Farm</strong>
+      <span style="opacity:.65">/ Expenses</span>
+    </div>
+    <nav style="display:flex; gap:12px; align-items:center;">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="sales.html">Sales</a>
+      <a href="inventory.html">Inventory</a>
+      <a href="#" id="logout">Logout</a>
+    </nav>
+  </header>
+
+  <div class="wrap">
+    <div class="card" style="margin-bottom:12px;">
+      <div class="body">
+        <div class="kpis">
+          <div class="kpi">
+            <div class="label">Total Expenses</div>
+            <div class="value" id="kpiExpenses">$0.00</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Expense Tax</div>
+            <div class="value" id="kpiExpenseTax">$0.00</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Net Profit (Rev - Exp)</div>
+            <div class="value" id="kpiProfit">$0.00</div>
+          </div>
+        </div>
+        <div class="muted" style="margin-top:8px;">
+          KPIs are pulled from <code>/api/dashboard/summary</code>.
+        </div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Create / Edit -->
+      <div class="card">
+        <h2 id="formTitle">Add Expense</h2>
+        <div class="body">
+          <div class="row">
+            <div>
+              <label>Date</label>
+              <input type="date" id="expense_date" />
+            </div>
+            <div>
+     <select id="category" required>
+  <option value="variable">Variable</option>
+  <option value="fixed">Fixed</option>
+  <option value="capital">Capital</option>
+</select>
+              <label>Sub_category</label>
+              <select id="sub_category" required>
+                <option value="feed">Feed</option>
+                <option value="seed">Seed</option>
+                <option value="fertilizer">Fertilizer/Chemicals</option>
+                <option value="fuel">Fuel</option>
+                <option value="equipment">Equipment</option>
+                <option value="repairs">Repairs/Maintenance</option>
+                <option value="labour">Labour</option>
+                <option value="utilities">Utilities</option>
+                <option value="transport">Transport</option>
+                <option value="packaging">Packaging</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Vendor / Payee</label>
+              <input id="vendor" placeholder="e.g., Agrovet, Fuel Station" />
+            </div>
+            <div>
+              <label>Payment Method</label>
+              <select id="payment_method">
+                <option value="cash">Cash</option>
+                <option value="mobile_money">Mobile Money</option>
+                <option value="card">Card</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="credit">Credit</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Total Cost</label>
+              <input type="number" step="0.01" id="total_cost" placeholder="0.00" />
+            </div>
+            <div>
+              <label>Tax Amount</label>
+              <input type="number" step="0.01" id="tax_amount" placeholder="0.00" />
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Notes</label>
+            <textarea id="notes" placeholder="Optional notes..."></textarea>
+          </div>
+
+          <div class="btns">
+            <button class="primary" id="saveBtn">Save</button>
+            <button class="ghost" id="resetBtn" type="button">Reset</button>
+          </div>
+
+          <div id="status" class="status"></div>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div class="card">
+        <div class="toolbar">
+          <div class="left">
+            <input id="search" placeholder="Search vendor/notes/category..." />
+            <select id="catFilter">
+              <option value="">All categories</option>
+              <option value="feed">Feed</option>
+              <option value="seed">Seed</option>
+              <option value="fertilizer">Fertilizer/Chemicals</option>
+              <option value="fuel">Fuel</option>
+              <option value="equipment">Equipment</option>
+              <option value="repairs">Repairs/Maintenance</option>
+              <option value="labour">Labour</option>
+              <option value="utilities">Utilities</option>
+              <option value="transport">Transport</option>
+              <option value="packaging">Packaging</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="muted" id="count">0 expenses</div>
+        </div>
+
+        <div class="body" style="padding:0;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:120px;">Date</th>
+                <th style="width:120px;">Category</th>
+                <th>Vendor</th>
+                <th class="right" style="width:140px;">Total</th>
+                <th class="right" style="width:120px;">Tax</th>
+                <th style="width:150px;">Payment</th>
+                <th class="right" style="width:180px;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tbody">
+              <tr><td colspan="7" class="muted" style="padding:14px;">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Config / helpers =====
+    const API = "http://localhost:5000";
+    function qs(id){ return document.getElementById(id); }
+    function money(n){
+  const x = Number(n || 0);
+  return "UGX " + x.toLocaleString("en-UG", { maximumFractionDigits: 0 });
+}
+    function setStatus(msg, ok=true){
+      const el = qs("status");
+      el.textContent = msg || "";
+      el.className = "status " + (ok ? "ok" : "err");
+    }
+
+    async function apiCall(path, options = {}) {
+      const token = localStorage.getItem("token");
+      if (!token) { window.location.href = "login.html"; return; }
+
+      const fetchOptions = {
+        method: options.method || "GET",
+        headers: { Authorization: `Bearer ${token}`, ...(options.headers || {}) }
+      };
+
+      if (options.body !== undefined) {
+        fetchOptions.headers["Content-Type"] = "application/json";
+        fetchOptions.body = JSON.stringify(options.body);
+      }
+
+      const res = await fetch(`${API}${path}`, fetchOptions);
+
+      if (res.status === 401) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        window.location.href = "login.html";
+        return;
+      }
+
+      if (res.status === 204) return null;
+
+      const ct = res.headers.get("content-type") || "";
+      const data = ct.includes("application/json") ? await res.json().catch(() => ({})) : await res.text().catch(() => "");
+
+      if (!res.ok) {
+        const msg = (data && data.error) ? data.error : (typeof data === "string" ? data : "Request failed");
+        throw new Error(msg);
+      }
+      return data;
+    }
+
+    // ===== State =====
+    let EXPENSES = [];
+    let editingId = null;
+
+    // ===== Load KPIs =====
+    async function loadKpis(){
+      const s = await apiCall("/api/dashboard/summary");
+      qs("kpiExpenses").textContent = money(s.expenses);
+      qs("kpiExpenseTax").textContent = money(s.expense_tax);
+      qs("kpiProfit").textContent = money(s.profit);
+    }
+
+    // ===== Expenses API (assumes /api/expenses exists) =====
+    async function loadExpenses(){
+      const rows = await apiCall("/api/expenses");
+      EXPENSES = Array.isArray(rows) ? rows : [];
+      render();
+    }
+
+    async function createExpense(payload){
+      return apiCall("/api/expenses", { method:"POST", body: payload });
+    }
+
+    async function updateExpense(id, payload){
+      return apiCall(`/api/expenses/${id}`, { method:"PUT", body: payload });
+    }
+
+    async function deleteExpense(id){
+      return apiCall(`/api/expenses/${id}`, { method:"DELETE" });
+    }
+
+    // ===== UI =====
+    function resetForm(){
+      editingId = null;
+      qs("formTitle").textContent = "Add Expense";
+      qs("saveBtn").textContent = "Save";
+      qs("expense_date").value = new Date().toISOString().slice(0,10);
+      qs("category").value = "feed";
+      qs("vendor").value = "";
+      qs("payment_method").value = "cash";
+      qs("total_cost").value = "";
+      qs("tax_amount").value = "";
+      qs("notes").value = "";
+      setStatus("");
+    }
+
+    function fillForm(x){
+      editingId = x.id;
+      qs("formTitle").textContent = "Edit Expense";
+      qs("saveBtn").textContent = "Update";
+      qs("expense_date").value = (x.expense_date || x.date || "").slice(0,10);
+      qs("category").value = x.category || "other";
+      qs("vendor").value = x.vendor || x.payee || "";
+      qs("payment_method").value = x.payment_method || "cash";
+      qs("total_cost").value = x.total_cost ?? x.amount ?? "";
+      qs("tax_amount").value = x.tax_amount ?? 0;
+      qs("notes").value = x.notes || "";
+      setStatus("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function render(){
+      const q = (qs("search").value || "").toLowerCase().trim();
+      const cat = qs("catFilter").value;
+
+      const rows = EXPENSES.filter(r => {
+        const hay = `${r.category||""} ${r.vendor||""} ${r.payee||""} ${r.notes||""}`.toLowerCase();
+        const okQ = !q || hay.includes(q);
+        const okC = !cat || (r.category === cat);
+        return okQ && okC;
+      });
+
+      qs("count").textContent = `${rows.length} expense${rows.length===1?"":"s"}`;
+
+      const tb = qs("tbody");
+      if (!rows.length){
+        tb.innerHTML = `<tr><td colspan="7" class="muted" style="padding:14px;">No expenses found.</td></tr>`;
+        return;
+      }
+
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td>${(r.expense_date || r.date || "").slice(0,10)}</td>
+          <td><span class="pill">${r.category || "other"}</span></td>
+          <td>${(r.vendor || r.payee || "").replaceAll("<","&lt;")}</td>
+          <td class="right">${money(r.total_cost ?? r.amount ?? 0)}</td>
+          <td class="right">${money(r.tax_amount ?? 0)}</td>
+          <td>${r.payment_method || ""}</td>
+          <td class="right">
+            <div class="actions">
+              <button class="linkbtn" data-edit="${r.id}">Edit</button>
+              <button class="danger" data-del="${r.id}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    // ===== Events =====
+    qs("logout").addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    });
+
+    qs("resetBtn").addEventListener("click", resetForm);
+
+    qs("search").addEventListener("input", render);
+    qs("catFilter").addEventListener("change", render);
+
+    qs("tbody").addEventListener("click", async (e) => {
+      const btn = e.target.closest("button");
+      if (!btn) return;
+
+      const editId = btn.getAttribute("data-edit");
+      const delId = btn.getAttribute("data-del");
+
+      if (editId){
+        const row = EXPENSES.find(x => String(x.id) === String(editId));
+        if (row) fillForm(row);
+      }
+
+      if (delId){
+        if (!confirm("Delete this expense?")) return;
+        try {
+          await deleteExpense(delId);
+          setStatus("Deleted ✅", true);
+          await loadExpenses();
+          await loadKpis();
+        } catch (err) {
+          setStatus(err.message || "Delete failed", false);
+        }
+      }
+    });
+
+    qs("saveBtn").addEventListener("click", async () => {
+      try {
+        const payload = {
+          expense_date: qs("expense_date").value,
+          category: qs("category").value,
+          sub_category: qs("sub_category").value,
+          vendor: qs("vendor").value.trim() || null,
+          payment_method: qs("payment_method").value,
+          total_cost: Number(qs("total_cost").value || 0),
+          tax_amount: Number(qs("tax_amount").value || 0),
+          notes: qs("notes").value.trim() || null,
+        };
+
+        if (!payload.expense_date) return setStatus("Date is required", false);
+        if (!payload.total_cost || payload.total_cost <= 0) return setStatus("Total cost must be > 0", false);
+
+        if (editingId){
+          await updateExpense(editingId, payload);
+          setStatus("Updated ✅", true);
+        } else {
+          await createExpense(payload);
+          setStatus("Saved ✅", true);
+        }
+
+        resetForm();
+        await loadExpenses();
+        await loadKpis();
+      } catch (err) {
+        setStatus(err.message || "Save failed", false);
+      }
+    });
+
+    // ===== Init =====
+    (async function init(){
+      resetForm();
+      try {
+        await loadKpis();
+      } catch(e) {
+        // KPI can fail if you have no sales/expenses tables wired yet
+      }
+
+      try {
+        await loadExpenses();
+      } catch (e) {
+        qs("tbody").innerHTML = `
+          <tr>
+            <td colspan="7" style="padding:14px;">
+              <div class="status err">
+                ${String(e.message || e).replaceAll("<","&lt;")}
+              </div>
+              <div class="muted" style="margin-top:6px;">
+                This page expects backend endpoints: <code>GET /api/expenses</code>, <code>POST /api/expenses</code>, <code>PUT /api/expenses/:id</code>, <code>DELETE /api/expenses/:id</code>.
+              </div>
+            </td>
+          </tr>`;
+      }
+    })();
+  </script>
+</body>
+</html>

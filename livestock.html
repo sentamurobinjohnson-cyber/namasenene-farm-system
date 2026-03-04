@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Livestock • Namasenene Farm</title>
+  <link rel="stylesheet" href="assets/styles.css"/>
+  <style>
+    body { background:#0b1220; color:#e5e7eb; font-family: system-ui, Arial; }
+    .wrap { max-width: 1250px; margin: 24px auto; padding: 0 14px; }
+    .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .grid { display:grid; grid-template-columns: 430px 1fr; gap: 14px; }
+    .card { background:#0f172a; border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:14px; }
+    h1,h2 { margin: 0 0 10px; }
+    .row { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    label { font-size:12px; opacity:.85; display:block; margin-bottom:6px; }
+    input, select, textarea {
+      width:100%; padding:10px; border-radius:10px;
+      border:1px solid rgba(255,255,255,.12);
+      background:#0b1220; color:#e5e7eb;
+      outline:none;
+    }
+    textarea { min-height: 80px; }
+    .btns { display:flex; gap:10px; margin-top:10px; flex-wrap: wrap; }
+    button {
+      padding:10px 14px; border-radius:10px; border:0; cursor:pointer;
+      background:#2563eb; color:white; font-weight:600;
+    }
+    button.secondary { background:#334155; }
+    button.danger { background:#ef4444; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); font-size: 13px; vertical-align: top; }
+    th { text-align:left; opacity:.8; }
+    .muted { opacity: .7; font-size:12px; }
+    .pill { font-size: 12px; padding:4px 8px; border-radius:999px; background:#111827; border:1px solid rgba(255,255,255,.1); }
+    .tabs { display:flex; gap:8px; flex-wrap: wrap; margin: 8px 0 0; }
+    .tab { background:#111827; border:1px solid rgba(255,255,255,.1); padding:7px 10px; border-radius:999px; cursor:pointer; }
+    .tab.active { background:#2563eb; border-color: transparent; }
+    .hr { border:0; border-top:1px solid rgba(255,255,255,.08); margin:14px 0; }
+    .flex { display:flex; gap:10px; align-items:center; justify-content:space-between; }
+    .kpis { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px; margin: 10px 0 0; }
+    .kpi { background:#0b1220; border:1px solid rgba(255,255,255,.08); border-radius:14px; padding:12px; }
+    .kpi .big { font-size: 20px; font-weight: 800; margin-top:6px; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>Livestock</h1>
+        <div class="muted">Groups • Animals • Health • Breeding • Mortality • Sales • Egg production</div>
+      </div>
+      <div class="muted">
+        <button class="secondary" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: Forms -->
+      <div class="card">
+        <div class="flex">
+          <h2>Actions</h2>
+          <span class="pill" id="msg"></span>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" data-tab="groups">Groups</div>
+          <div class="tab" data-tab="animals">Animals</div>
+          <div class="tab" data-tab="health">Health</div>
+          <div class="tab" data-tab="breeding">Breeding</div>
+          <div class="tab" data-tab="mortality">Mortality</div>
+          <div class="tab" data-tab="sell">Sell</div>
+          <div class="tab" data-tab="eggs">Eggs</div>
+        </div>
+
+        <!-- GROUPS -->
+        <div id="tab-groups" style="margin-top:12px;">
+          <h2 style="margin-bottom:8px;">Add / Edit Group</h2>
+          <input type="hidden" id="g_id" />
+          <div class="row">
+            <div>
+              <label>Group Name</label>
+              <input id="g_name" placeholder="e.g., Layers, Broilers, Goats"/>
+            </div>
+            <div>
+              <label>Species (optional)</label>
+              <input id="g_species" placeholder="e.g., Chicken, Goat"/>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <label>Notes</label>
+            <textarea id="g_notes" placeholder="Optional"></textarea>
+          </div>
+          <div class="btns">
+            <button id="saveGroupBtn" type="button">Save Group</button>
+            <button class="secondary" id="resetGroupBtn" type="button">Reset</button>
+          </div>
+        </div>
+
+        <!-- ANIMALS -->
+        <div id="tab-animals" style="margin-top:12px; display:none;">
+          <h2 style="margin-bottom:8px;">Add / Edit Animal</h2>
+          <input type="hidden" id="a_id" />
+
+          <div class="row">
+            <div>
+              <label>Tag Number</label>
+              <input id="a_tag" placeholder="Unique tag e.g., CH-001"/>
+            </div>
+            <div>
+              <label>Group</label>
+              <select id="a_group"></select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Species</label>
+              <input id="a_species" placeholder="e.g., Chicken"/>
+            </div>
+            <div>
+              <label>Breed (optional)</label>
+              <input id="a_breed" placeholder="e.g., Local, Kuroiler"/>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Status</label>
+              <select id="a_status">
+                <option value="active">Active</option>
+                <option value="sold">Sold</option>
+                <option value="deceased">Deceased</option>
+              </select>
+            </div>
+            <div>
+              <label>Birth Date (optional)</label>
+              <input type="date" id="a_birth"/>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Purchase Date (optional)</label>
+              <input type="date" id="a_purchase"/>
+            </div>
+            <div>
+              <label>Purchase Source (optional)</label>
+              <input id="a_source" placeholder="e.g., Market, Farm X"/>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Notes</label>
+            <textarea id="a_notes" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="btns">
+            <button id="saveAnimalBtn" type="button">Save Animal</button>
+            <button class="secondary" id="resetAnimalBtn" type="button">Reset</button>
+          </div>
+        </div>
+
+        <!-- HEALTH -->
+        <div id="tab-health" style="margin-top:12px; display:none;">
+          <h2 style="margin-bottom:8px;">Add Health Record</h2>
+          <div>
+            <label>Animal</label>
+            <select id="h_animal"></select>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Date</label>
+              <input type="date" id="h_date"/>
+            </div>
+            <div>
+              <label>Type</label>
+              <select id="h_type">
+                <option value="vaccination">Vaccination</option>
+                <option value="medication">Medication</option>
+                <option value="treatment">Treatment</option>
+                <option value="checkup">Checkup</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Item</label>
+            <input id="h_item" placeholder="e.g., Newcastle vaccine"/>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Dose (optional)</label>
+              <input id="h_dose" placeholder="e.g., 1ml"/>
+            </div>
+            <div>
+              <label>Next Due Date (optional)</label>
+              <input type="date" id="h_next"/>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Vet Name (optional)</label>
+            <input id="h_vet" placeholder="Optional"/>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Notes</label>
+            <textarea id="h_notes" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="btns">
+            <button id="addHealthBtn" type="button">Add Record</button>
+          </div>
+        </div>
+
+        <!-- BREEDING -->
+        <div id="tab-breeding" style="margin-top:12px; display:none;">
+          <h2 style="margin-bottom:8px;">Add Breeding Record</h2>
+          <div>
+            <label>Animal</label>
+            <select id="b_animal"></select>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Mating Date</label>
+              <input type="date" id="b_mating"/>
+            </div>
+            <div>
+              <label>Expected Birth Date (optional)</label>
+              <input type="date" id="b_expected"/>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Actual Birth Date (optional)</label>
+              <input type="date" id="b_actual"/>
+            </div>
+            <div>
+              <label>Outcome (optional)</label>
+              <input id="b_outcome" placeholder="e.g., 8 chicks, twins, failed"/>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Notes</label>
+            <textarea id="b_notes" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="btns">
+            <button id="addBreedingBtn" type="button">Add Breeding</button>
+          </div>
+        </div>
+
+        <!-- MORTALITY -->
+        <div id="tab-mortality" style="margin-top:12px; display:none;">
+          <h2 style="margin-bottom:8px;">Record Mortality</h2>
+          <div>
+            <label>Animal</label>
+            <select id="m_animal"></select>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Death Date</label>
+              <input type="date" id="m_date"/>
+            </div>
+            <div>
+              <label>Cause (optional)</label>
+              <input id="m_cause" placeholder="Optional"/>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Notes</label>
+            <textarea id="m_notes" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="btns">
+            <button id="addMortalityBtn" type="button">Save</button>
+          </div>
+        </div>
+
+        <!-- SELL -->
+        <div id="tab-sell" style="margin-top:12px; display:none;">
+          <h2 style="margin-bottom:8px;">Sell Animal</h2>
+          <div>
+            <label>Animal</label>
+            <select id="s_animal"></select>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Sale Date</label>
+              <input type="date" id="s_date"/>
+            </div>
+            <div>
+              <label>Price</label>
+              <input type="number" step="0.01" id="s_price" placeholder="0"/>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Customer (optional)</label>
+              <select id="s_customer"></select>
+            </div>
+            <div>
+              <label>Payment Method (optional)</label>
+              <input id="s_payment" placeholder="cash / mobile money / bank"/>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Notes</label>
+            <textarea id="s_notes" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="btns">
+            <button id="sellBtn" type="button">Mark Sold</button>
+            <button class="secondary" id="unsellBtn" type="button">Undo Sold</button>
+          </div>
+        </div>
+
+        <!-- EGGS -->
+        <div id="tab-eggs" style="margin-top:12px; display:none;">
+          <h2 style="margin-bottom:8px;">Daily Egg Production</h2>
+
+          <div class="kpis">
+            <div class="kpi">
+              <div class="muted">Total Eggs</div>
+              <div class="big" id="kpiEggs">0</div>
+            </div>
+            <div class="kpi">
+              <div class="muted">Broken</div>
+              <div class="big" id="kpiBroken">0</div>
+            </div>
+            <div class="kpi">
+              <div class="muted">Trays</div>
+              <div class="big" id="kpiTrays">0</div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Date</label>
+              <input type="date" id="e_date"/>
+            </div>
+            <div>
+              <label>Group (optional)</label>
+              <select id="e_group"></select>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div>
+              <label>Eggs Collected</label>
+              <input type="number" id="e_eggs" value="0" min="0"/>
+            </div>
+            <div>
+              <label>Eggs Broken</label>
+              <input type="number" id="e_broken" value="0" min="0"/>
+            </div>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Trays</label>
+            <input type="number" id="e_trays" value="0" min="0"/>
+          </div>
+
+          <div style="margin-top:10px;">
+            <label>Notes</label>
+            <textarea id="e_notes" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="btns">
+            <button id="addEggBtn" type="button">Save Egg Record</button>
+          </div>
+        </div>
+
+        <hr class="hr"/>
+        <div class="muted">Tip: Use <b>category</b> in Finance for accounting; livestock modules are operational.</div>
+      </div>
+
+      <!-- RIGHT: Lists -->
+      <div class="card">
+        <div class="flex">
+          <h2>Animals & Logs</h2>
+          <input id="search" placeholder="Search tag/species/breed/group..." style="max-width: 360px;">
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>Filter by Group</label>
+            <select id="filterGroup"></select>
+          </div>
+          <div>
+            <label>Status</label>
+            <select id="filterStatus">
+              <option value="">All</option>
+              <option value="active">Active</option>
+              <option value="sold">Sold</option>
+              <option value="deceased">Deceased</option>
+            </select>
+          </div>
+        </div>
+
+        <h2 style="margin-top:14px;">Animals</h2>
+        <table style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Tag</th>
+              <th>Group</th>
+              <th>Species</th>
+              <th>Breed</th>
+              <th>Status</th>
+              <th style="width:220px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="animalsTbody">
+            <tr><td colspan="6" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+
+        <h2 style="margin-top:14px;">Recent Egg Records</h2>
+        <table style="margin-top:8px;">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Group</th>
+              <th>Eggs</th>
+              <th>Broken</th>
+              <th>Trays</th>
+              <th style="width:90px;"></th>
+            </tr>
+          </thead>
+          <tbody id="eggsTbody">
+            <tr><td colspan="6" class="muted">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+  <script>
+    function showMsg(t){ qs("msg").textContent = t || ""; }
+
+    function todayISO(){
+      const d = new Date();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return `${d.getFullYear()}-${m}-${day}`;
+    }
+
+    function setTabs(active){
+      document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.tab === active));
+      ["groups","animals","health","breeding","mortality","sell","eggs"].forEach(k => {
+        qs("tab-"+k).style.display = (k === active) ? "block" : "none";
+      });
+    }
+    document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => setTabs(t.dataset.tab)));
+
+    qs("logoutBtn").onclick = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "login.html";
+    };
+
+    let groups = [];
+    let animals = [];
+    let customers = [];
+    let eggs = [];
+
+    function renderSelect(selectId, list, { includeBlank=false, blankLabel="(Select)" } = {}, labelFn){
+      const sel = qs(selectId);
+      sel.innerHTML = (includeBlank ? `<option value="">${blankLabel}</option>` : "") +
+        list.map(x => `<option value="${x.id}">${labelFn(x)}</option>`).join("");
+    }
+
+    function applyFilters(list){
+      const q = qs("search").value.toLowerCase().trim();
+      const g = qs("filterGroup").value;
+      const st = qs("filterStatus").value;
+
+      return list.filter(a => {
+        if (g && String(a.group_id || "") !== g) return false;
+        if (st && a.status !== st) return false;
+        if (!q) return true;
+        const hay = `${a.tag_number||""} ${a.species||""} ${a.breed||""} ${a.group_name||""}`.toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    function renderAnimals(){
+      const list = applyFilters(animals);
+      const tb = qs("animalsTbody");
+      if(!list.length){
+        tb.innerHTML = `<tr><td colspan="6" class="muted">No animals found.</td></tr>`;
+        return;
+      }
+      tb.innerHTML = list.map(a => `
+        <tr>
+          <td><b>${a.tag_number}</b></td>
+          <td>${a.group_name || "-"}</td>
+          <td>${a.species}</td>
+          <td>${a.breed || "-"}</td>
+          <td>${a.status}</td>
+          <td>
+            <button class="secondary" data-edit="${a.id}" type="button">Edit</button>
+            <button class="secondary" data-details="${a.id}" type="button">Details</button>
+            <button class="danger" data-del="${a.id}" type="button">Delete</button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function renderEggs(){
+      const tb = qs("eggsTbody");
+      const list = eggs.slice(0, 15);
+      if(!list.length){
+        tb.innerHTML = `<tr><td colspan="6" class="muted">No egg records yet.</td></tr>`;
+        return;
+      }
+      tb.innerHTML = list.map(r => `
+        <tr>
+          <td>${r.prod_date}</td>
+          <td>${r.group_name || "-"}</td>
+          <td>${r.eggs_collected}</td>
+          <td>${r.eggs_broken}</td>
+          <td>${r.trays}</td>
+          <td><button class="danger" data-del-egg="${r.id}" type="button">X</button></td>
+        </tr>
+      `).join("");
+    }
+
+    function resetGroupForm(){
+      qs("g_id").value = "";
+      qs("g_name").value = "";
+      qs("g_species").value = "";
+      qs("g_notes").value = "";
+    }
+
+    function resetAnimalForm(){
+      qs("a_id").value = "";
+      qs("a_tag").value = "";
+      qs("a_group").value = "";
+      qs("a_species").value = "";
+      qs("a_breed").value = "";
+      qs("a_status").value = "active";
+      qs("a_birth").value = "";
+      qs("a_purchase").value = "";
+      qs("a_source").value = "";
+      qs("a_notes").value = "";
+    }
+
+    async function refresh(){
+      try{
+        groups = await api("/api/livestock/groups");
+        animals = await api("/api/livestock/animals");
+        eggs = await api("/api/livestock/eggs?limit=200");
+
+        // customers are optional (sell tab)
+        try { customers = await api("/api/customers"); } catch { customers = []; }
+
+        renderSelect("a_group", groups, { includeBlank:true, blankLabel:"(No group)" }, g => g.name);
+        renderSelect("filterGroup", groups, { includeBlank:true, blankLabel:"All groups" }, g => g.name);
+        renderSelect("e_group", groups, { includeBlank:true, blankLabel:"(No group)" }, g => g.name);
+
+        const animalLabel = a => `${a.tag_number} • ${a.species}${a.group_name ? " • " + a.group_name : ""}`;
+        renderSelect("h_animal", animals, {}, animalLabel);
+        renderSelect("b_animal", animals, {}, animalLabel);
+        renderSelect("m_animal", animals, {}, animalLabel);
+        renderSelect("s_animal", animals, {}, animalLabel);
+
+        renderSelect("s_customer", customers, { includeBlank:true, blankLabel:"(No customer)" }, c => `${c.name} (${c.type})`);
+
+        renderAnimals();
+        renderEggs();
+
+        // egg summary
+        try{
+          const sum = await api("/api/livestock/eggs/summary");
+          qs("kpiEggs").textContent = sum.eggs_collected;
+          qs("kpiBroken").textContent = sum.eggs_broken;
+          qs("kpiTrays").textContent = sum.trays;
+        } catch {}
+
+        showMsg("✅ Loaded");
+      } catch(e){
+        showMsg("❌ " + e.message);
+      }
+    }
+
+    // ----- GROUP SAVE / RESET -----
+    qs("saveGroupBtn").onclick = async () => {
+      try{
+        const id = qs("g_id").value;
+        const body = {
+          name: qs("g_name").value.trim(),
+          species: qs("g_species").value.trim() || null,
+          notes: qs("g_notes").value.trim() || null
+        };
+        if(!body.name) return showMsg("Group name required.");
+
+        if(id){
+          await api(`/api/livestock/groups/${id}`, { method:"PUT", body });
+          showMsg("✅ Group updated");
+        } else {
+          await api("/api/livestock/groups", { method:"POST", body });
+          showMsg("✅ Group added");
+        }
+        resetGroupForm();
+        await refresh();
+      } catch(e){ showMsg("❌ " + e.message); }
+    };
+    qs("resetGroupBtn").onclick = () => resetGroupForm();
+
+    // ----- ANIMAL SAVE / RESET -----
+    qs("saveAnimalBtn").onclick = async () => {
+      try{
+        const id = qs("a_id").value;
+        const body = {
+          tag_number: qs("a_tag").value.trim(),
+          group_id: qs("a_group").value ? Number(qs("a_group").value) : null,
+          species: qs("a_species").value.trim(),
+          breed: qs("a_breed").value.trim() || null,
+          status: qs("a_status").value,
+          birth_date: qs("a_birth").value || null,
+          purchase_date: qs("a_purchase").value || null,
+          purchase_source: qs("a_source").value.trim() || null,
+          notes: qs("a_notes").value.trim() || null
+        };
+        if(!body.tag_number || !body.species) return showMsg("Tag number + species required.");
+
+        if(id){
+          await api(`/api/livestock/animals/${id}`, { method:"PUT", body });
+          showMsg("✅ Animal updated");
+        } else {
+          await api("/api/livestock/animals", { method:"POST", body });
+          showMsg("✅ Animal added");
+        }
+        resetAnimalForm();
+        await refresh();
+        setTabs("animals");
+      } catch(e){ showMsg("❌ " + e.message); }
+    };
+    qs("resetAnimalBtn").onclick = () => resetAnimalForm();
+
+    // ----- HEALTH -----
+    qs("addHealthBtn").onclick = async () => {
+      try{
+        const body = {
+          animal_id: Number(qs("h_animal").value),
+          entry_date: qs("h_date").value,
+          type: qs("h_type").value,
+          item: qs("h_item").value.trim(),
+          dose: qs("h_dose").value.trim() || null,
+          next_due_date: qs("h_next").value || null,
+          vet_name: qs("h_vet").value.trim() || null,
+          notes: qs("h_notes").value.trim() || null
+        };
+        if(!body.animal_id || !body.entry_date || !body.item) return showMsg("Animal + date + item required.");
+        await api("/api/livestock/health", { method:"POST", body });
+        ["h_item","h_dose","h_next","h_vet","h_notes"].forEach(id => qs(id).value = "");
+        qs("h_date").value = todayISO();
+        showMsg("✅ Health record added");
+      } catch(e){ showMsg("❌ " + e.message); }
+    };
+
+    // ----- BREEDING -----
+    qs("addBreedingBtn").onclick = async () => {
+      try{
+        const body = {
+          animal_id: Number(qs("b_animal").value),
+          mating_date: qs("b_mating").value,
+          expected_birth_date: qs("b_expected").value || null,
+          actual_birth_date: qs("b_actual").value || null,
+          outcome: qs("b_outcome").value.trim() || null,
+          notes: qs("b_notes").value.trim() || null
+        };
+        if(!body.animal_id || !body.mating_date) return showMsg("Animal + mating date required.");
+        await api("/api/livestock/breeding", { method:"POST", body });
+        ["b_expected","b_actual","b_outcome","b_notes"].forEach(id => qs(id).value = "");
+        qs("b_mating").value = todayISO();
+        showMsg("✅ Breeding record added");
+      } catch(e){ showMsg("❌ " + e.message); }
+    };
+
+    // ----- MORTALITY -----
+    qs("addMortalityBtn").onclick = async () => {
+      try{
+        const body = {
+          animal_id: Number(qs("m_animal").value),
+          death_date: qs("m_date").value,
+          cause: qs("m_cause").value.trim() || null,
+          notes: qs("m_notes").value.trim() || null
+        };
+        if(!body.animal_id || !body.death_date) return showMsg("Animal + death date required.");
+        await api("/api/livestock/mortality", { method:"POST", body });
+        ["m_cause","m_notes"].forEach(id => qs(id).value = "");
+        qs("m_date").value = todayISO();
+        showMsg("✅ Mortality recorded");
+        await refresh();
+      } catch(e){ showMsg("❌ " + e.message); }
+    };
+
+    // ----- SELL -----
+    qs("sellBtn").onclick = async () => {
+      try{
+        const animalId = Number(qs("s_animal").value);
+        const body = {
+          sale_date: qs("s_date").value,
+          price: Number(qs("s_price").value || 0),
+          customer_id: qs("s_customer").value ? Number(qs("s_customer").value) : null,
+          payment_method: qs("s_payment").value.trim() || null,
+          notes: qs("s_notes").value.trim() || null
+        };
+        if(!animalId || !body.sale_date) return showMsg("Animal + sale date required.");
+        await api(`/api/livestock/animals/${animalId}/sell`, { method:"POST", body });
+        showMsg("✅ Marked sold");
+        await refresh();
+      } catch(e){ showMsg("❌ " + e.message); }
+    };
+
+    qs("unsellBtn").onclick = async () => {
+      try{
+        const animalId = Number(qs("s_animal").value);
+        if(!animalId) return showMsg("Select an animal.");
+        await api(`/api/livestock/animals/${animalId}/unsell`, { method:"POST", body:{} });
+        showMsg("✅ Set back to active");
+        await refresh();
+      } catch(e){ showMsg("❌ " + e.message); }
+    };
+
+    // ----- EGGS -----
+    qs("addEggBtn").onclick = async () => {
+      try{
+        const body = {
+          prod_date: qs("e_date").value,
+          group_id: qs("e_group").value ? Number(qs("e_group").value) : null,
+          eggs_collected: Number(qs("e_eggs").value || 0),
+          eggs_broken: Number(qs("e_broken").value || 0),
+          trays: Number(qs("e_trays").value || 0),
+          notes: qs("e_notes").value.trim() || null
+        };
+        if(!body.prod_date) return showMsg("Egg date required.");
+        await api("/api/livestock/eggs", { method:"POST", body });
+        qs("e_eggs").value = "0";
+        qs("e_broken").value = "0";
+        qs("e_trays").value = "0";
+        qs("e_notes").value = "";
+        showMsg("✅ Egg record saved");
+        await refresh();
+      } catch(e){ showMsg("❌ " + e.message); }
+    };
+
+    // Actions in tables
+    qs("animalsTbody").addEventListener("click", async (e) => {
+      const del = e.target.closest("button[data-del]");
+      const edit = e.target.closest("button[data-edit]");
+      const details = e.target.closest("button[data-details]");
+
+      if(del){
+        const id = del.dataset.del;
+        if(!confirm("Delete this animal? This removes health/breeding/mortality/sales too.")) return;
+        try{
+          await api(`/api/livestock/animals/${id}`, { method:"DELETE" });
+          showMsg("✅ Deleted");
+          await refresh();
+        } catch(err){ showMsg("❌ " + err.message); }
+      }
+
+      if(edit){
+        const id = Number(edit.dataset.edit);
+        const a = animals.find(x => x.id === id);
+        if(!a) return;
+
+        setTabs("animals");
+        qs("a_id").value = a.id;
+        qs("a_tag").value = a.tag_number || "";
+        qs("a_group").value = a.group_id || "";
+        qs("a_species").value = a.species || "";
+        qs("a_breed").value = a.breed || "";
+        qs("a_status").value = a.status || "active";
+        qs("a_birth").value = a.birth_date || "";
+        qs("a_purchase").value = a.purchase_date || "";
+        qs("a_source").value = a.purchase_source || "";
+        qs("a_notes").value = a.notes || "";
+        showMsg("Editing animal: " + a.tag_number);
+      }
+
+      if(details){
+        const id = details.dataset.details;
+        try{
+          const d = await api(`/api/livestock/animals/${id}`);
+          alert(
+            `Tag: ${d.animal.tag_number}\n` +
+            `Group: ${d.animal.group_name || "-"}\n` +
+            `Species: ${d.animal.species}\n` +
+            `Breed: ${d.animal.breed || "-"}\n` +
+            `Status: ${d.animal.status}\n\n` +
+            `Health: ${d.health.length}\nBreeding: ${d.breeding.length}\nMortality: ${d.mortality.length}\nSales: ${d.sales.length}`
+          );
+        } catch(err){ showMsg("❌ " + err.message); }
+      }
+    });
+
+    qs("eggsTbody").addEventListener("click", async (e) => {
+      const del = e.target.closest("button[data-del-egg]");
+      if(!del) return;
+      const id = del.dataset.delEgg;
+      if(!confirm("Delete this egg record?")) return;
+      try{
+        await api(`/api/livestock/eggs/${id}`, { method:"DELETE" });
+        showMsg("✅ Egg record deleted");
+        await refresh();
+      } catch(err){ showMsg("❌ " + err.message); }
+    });
+
+    ["search","filterGroup","filterStatus"].forEach(id => {
+      qs(id).addEventListener("input", renderAnimals);
+      qs(id).addEventListener("change", renderAnimals);
+    });
+
+    // defaults
+    qs("h_date").value = todayISO();
+    qs("b_mating").value = todayISO();
+    qs("m_date").value = todayISO();
+    qs("s_date").value = todayISO();
+    qs("e_date").value = todayISO();
+
+    refresh();
+  </script>
+</body>
+</html>

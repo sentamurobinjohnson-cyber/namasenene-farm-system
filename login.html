@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>NFMS Login</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">Namasenene Farm <small>Farm Management System (NFMS)</small></div>
+  </div>
+
+  <div class="container">
+    <div class="grid">
+      <div class="card half">
+        <h1>Login</h1>
+        <p>Default admin after seeding: <span class="badge">admin@namasenene.local</span> / <span class="badge">Admin123!</span></p>
+
+        <div class="row">
+          <div>
+            <label>Email</label>
+            <input id="email" value="admin@namasenene.local" />
+          </div>
+          <div>
+            <label>Password</label>
+            <input id="password" type="password" value="Admin123!" />
+          </div>
+          <button class="primary" id="btn">Sign in</button>
+        </div>
+
+        <p id="msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+ <script>
+//const API = "http://localhost:5000";
+
+const btn = document.getElementById("btn");
+const msg = document.getElementById("msg");
+
+async function doLogin() {
+  msg.textContent = "Signing in...";
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  try {
+    const res = await fetch(`${API}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      msg.textContent = data.error || "Login failed";
+      return;
+    }
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    msg.textContent = "Login successful ✅ Redirecting...";
+    window.location.href = "dashboard.html";
+  } catch (err) {
+    msg.textContent = "Server not reachable. Is backend running?";
+  }
+}
+
+btn.addEventListener("click", doLogin);
+
+// Optional: allow Enter key to login
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") doLogin();
+});
+</script>
+</body>
+</html>

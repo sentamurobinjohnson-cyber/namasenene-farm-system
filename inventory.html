@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Namasenene Farm - Inventory</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 16px; }
+    nav a { margin-right: 10px; }
+    .card { border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin: 12px 0; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    label { display:block; font-size: 12px; margin-top: 8px; }
+    input, select, button { padding: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f6f6f6; text-align: left; }
+    .msg { padding: 10px; border-radius: 6px; margin: 10px 0; }
+    .ok { background: #e8fff0; border: 1px solid #bde5c8; }
+    .err { background: #ffecec; border: 1px solid #f5bcbc; }
+    .muted { color:#666; font-size: 13px; }
+    .right { text-align: right; }
+    .btn { cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h2>Namasenene Farm - Inventory</h2>
+
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="sales.html">Sales</a>
+    <a href="expenses.html">Expenses</a>
+    <a href="inventory.html"><b>Inventory</b></a>
+    <a href="logout.html">Logout</a>
+  </nav>
+
+  <div id="msg" class="msg" style="display:none;"></div>
+
+  <div class="card">
+    <h3>Stock On Hand</h3>
+    <div class="muted">This is calculated from inventory movements (IN / OUT).</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Item Type</th>
+          <th>Item</th>
+          <th class="right">Qty On Hand</th>
+          <th>Unit</th>
+        </tr>
+      </thead>
+      <tbody id="stockRows"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>Add Inventory Movement</h3>
+
+    <form id="movementForm">
+      <div class="row">
+        <div>
+          <label>Item Type</label>
+          <select id="item_type" required>
+            <option value="supply">Supply</option>
+            <option value="crop">Crop</option>
+            <option value="livestock">Livestock</option>
+            <option value="product">Product</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Item</label>
+          <select id="item_select" required></select>
+          <div class="muted" id="itemHint"></div>
+        </div>
+
+        <div>
+          <label>Direction</label>
+          <select id="direction" required>
+            <option value="in">IN</option>
+            <option value="out">OUT</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Quantity</label>
+          <input id="quantity" type="number" step="0.01" min="0" required />
+        </div>
+
+        <div>
+          <label>Unit</label>
+          <input id="unit" type="text" required />
+        </div>
+
+        <div style="flex:1; min-width:220px;">
+          <label>Reason</label>
+          <input id="reason" type="text" placeholder="opening_stock, purchase, usage, sale..." required style="width:100%;" />
+        </div>
+
+        <div style="align-self:flex-end;">
+          <button class="btn" type="submit">Save Movement</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Movement History</h3>
+    <div class="muted">Latest 200 movements.</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Date/Time</th>
+          <th>Item Type</th>
+          <th>Item</th>
+          <th>Dir</th>
+          <th class="right">Qty</th>
+          <th>Unit</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody id="moveRows"></tbody>
+    </table>
+  </div>
+
+<script>
+  // Change this if your backend uses a different port
+  const API = "http://localhost:5000";
+
+  const el = (id) => document.getElementById(id);
+
+  function showMsg(text, type="ok") {
+    const box = el("msg");
+    box.className = "msg " + (type === "err" ? "err" : "ok");
+    box.textContent = text;
+    box.style.display = "block";
+    setTimeout(() => { box.style.display = "none"; }, 5000);
+  }
+
+  function fmtNum(x) {
+    const n = Number(x);
+    if (Number.isNaN(n)) return x;
+    return n.toFixed(2);
+  }
+
+  // Cache items so we can show names and auto-fill unit
+  let currentItems = []; // [{id, name, unit}]
+  let currentType = "supply";
+
+ async function fetchJSON(url, opts = {}) {
+  const token = localStorage.getItem("token");
+
+  const headers = opts.headers || {};
+  if (token) {
+    headers["Authorization"] = "Bearer " + token;
+  }
+
+  const res = await fetch(url, {
+    ...opts,
+    headers
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw new Error(data.error || ("HTTP " + res.status));
+  }
+
+  return data;
+}
+
+  async function loadItemsForType(type) {
+    currentType = type;
+
+    const itemSelect = el("item_select");
+    const itemHint = el("itemHint");
+
+    itemSelect.innerHTML = "";
+    currentItems = [];
+
+    // For now we only have real tables for supply + crop
+    if (type === "supply") {
+      currentItems = await fetchJSON(`${API}/api/supplies`);
+      itemHint.textContent = "Supply list from supplies table.";
+    } else if (type === "crop") {
+      currentItems = await fetchJSON(`${API}/api/crops`);
+      itemHint.textContent = "Crop list from crops table.";
+    } else {
+      // livestock/product: allow manual entry by using a simple placeholder list
+      currentItems = [{ id: 1, name: "Manual Item ID (use existing ID)", unit: "" }];
+      itemHint.textContent = "Livestock/Product list not implemented yet. Add later if you want.";
+    }
+
+    itemSelect.innerHTML = currentItems.map(it => {
+      const label = `${it.name} (ID: ${it.id})`;
+      return `<option value="${it.id}">${label}</option>`;
+    }).join("");
+
+    // Auto-fill unit from the first item
+    const first = currentItems[0];
+    el("unit").value = first?.unit || "";
+  }
+
+  async function loadStock() {
+    const rows = el("stockRows");
+    rows.innerHTML = `<tr><td colspan="4" class="muted">Loading...</td></tr>`;
+
+    const data = await fetchJSON(`${API}/api/reports/stock-enriched`);
+
+    if (!data.length) {
+      rows.innerHTML = `<tr><td colspan="4" class="muted">No inventory recorded yet.</td></tr>`;
+      return;
+    }
+
+    rows.innerHTML = data.map(r => `
+      <tr>
+        <td>${r.item_type}</td>
+        <td>${r.item_name || ("Item ID " + r.item_id)}</td>
+        <td class="right">${fmtNum(r.qty_on_hand)}</td>
+        <td>${r.unit}</td>
+      </tr>
+    `).join("");
+  }
+
+  async function loadMovements() {
+    const rows = el("moveRows");
+    rows.innerHTML = `<tr><td colspan="7" class="muted">Loading...</td></tr>`;
+
+    const data = await fetchJSON(`${API}/api/inventory/movements`);
+
+    if (!data.length) {
+      rows.innerHTML = `<tr><td colspan="7" class="muted">No movements yet.</td></tr>`;
+      return;
+    }
+
+    rows.innerHTML = data.map(m => `
+      <tr>
+        <td>${m.movement_time || ""}</td>
+        <td>${m.item_type}</td>
+        <td>${m.item_name || ("Item ID " + m.item_id)}</td>
+        <td>${m.direction.toUpperCase()}</td>
+        <td class="right">${fmtNum(m.quantity)}</td>
+        <td>${m.unit}</td>
+        <td>${m.reason || ""}</td>
+      </tr>
+    `).join("");
+  }
+
+  // When user changes type, reload dropdown items
+  el("item_type").addEventListener("change", async (e) => {
+    try {
+      await loadItemsForType(e.target.value);
+    } catch (err) {
+      showMsg("Failed loading items: " + err.message, "err");
+    }
+  });
+
+  // When user changes selected item, auto-fill unit
+  el("item_select").addEventListener("change", () => {
+    const id = Number(el("item_select").value);
+    const found = currentItems.find(x => Number(x.id) === id);
+    if (found) el("unit").value = found.unit || el("unit").value || "";
+  });
+
+  // Save movement
+  el("movementForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      item_type: el("item_type").value,
+      item_id: Number(el("item_select").value),
+      direction: el("direction").value,
+      quantity: Number(el("quantity").value),
+      unit: el("unit").value.trim(),
+      reason: el("reason").value.trim()
+    };
+
+    try {
+      await fetchJSON(`${API}/api/inventory/movements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      showMsg("Saved ✅ Inventory movement added.", "ok");
+      el("quantity").value = "";
+      el("reason").value = "";
+
+      // Reload tables
+      await loadStock();
+      await loadMovements();
+    } catch (err) {
+      showMsg("Save failed: " + err.message, "err");
+      console.error(err);
+    }
+  });
+
+  // Initial load
+  (async function init() {
+    try {
+      await loadItemsForType("supply");
+      await loadStock();
+      await loadMovements();
+    } catch (err) {
+      showMsg("Inventory failed to load. Is backend running on :5000? " + err.message, "err");
+      console.error(err);
+    }
+  })();
+</script>
+
+</body>
+</html>

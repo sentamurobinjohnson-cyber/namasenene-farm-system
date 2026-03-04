@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>NFMS Crops</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">Namasenene Farm <small>Crops Module</small></div>
+    <div class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="crops.html">Crops</a>
+      <a href="livestock.html">Livestock</a>
+      <a href="supplies.html">Supplies</a>
+      <a href="expenses.html">Expenses</a>
+      <a href="sales.html">Sales</a>
+      <a href="reports.html">Reports</a>
+      <button class="danger" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="grid">
+      <div class="card half">
+        <h2>Add Field</h2>
+        <div class="row">
+          <div><label>Name</label><input id="field_name" placeholder="Field A" /></div>
+          <div><label>Size (acres)</label><input id="field_size" type="number" step="0.01" /></div>
+          <button class="primary" id="addField">Add</button>
+        </div>
+        <table id="fieldsTable"><thead><tr><th>Name</th><th>Acres</th></tr></thead><tbody></tbody></table>
+      </div>
+
+      <div class="card half">
+        <h2>Add Crop</h2>
+        <div class="row">
+          <div><label>Crop</label><input id="crop_name" placeholder="Maize" /></div>
+          <div><label>Variety</label><input id="crop_variety" placeholder="Hybrid" /></div>
+          <div><label>Unit</label><input id="crop_unit" value="kg" /></div>
+          <button class="primary" id="addCrop">Add</button>
+        </div>
+        <table id="cropsTable"><thead><tr><th>Crop</th><th>Variety</th><th>Unit</th></tr></thead><tbody></tbody></table>
+      </div>
+
+      <div class="card">
+        <h2>Add Planting</h2>
+        <div class="row">
+          <div><label>Field</label><select id="p_field"></select></div>
+          <div><label>Crop</label><select id="p_crop"></select></div>
+          <div><label>Planting date</label><input id="p_date" type="date" /></div>
+          <div><label>Seed source</label><input id="p_seed" placeholder="Supplier X" /></div>
+          <div><label>Qty planted</label><input id="p_qty" type="number" step="0.01" value="0" /></div>
+          <button class="primary" id="addPlanting">Save</button>
+        </div>
+
+        <h2 style="margin-top:14px;">Plantings</h2>
+        <table id="plantingsTable">
+          <thead><tr><th>Date</th><th>Field</th><th>Crop</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Add Harvest (creates stock IN)</h2>
+        <div class="row">
+          <div><label>Planting</label><select id="h_planting"></select></div>
+          <div><label>Harvest date</label><input id="h_date" type="date" /></div>
+          <div><label>Quantity</label><input id="h_qty" type="number" step="0.01" /></div>
+          <div><label>Unit</label><input id="h_unit" value="kg" /></div>
+          <button class="primary" id="addHarvest">Save</button>
+        </div>
+        <p class="badge" id="msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/app.js"></script>
+  <script>
+    async function refresh() {
+      const fields = await api("/api/fields");
+      const crops = await api("/api/crops");
+      const plantings = await api("/api/plantings");
+
+      qs("fieldsTable").querySelector("tbody").innerHTML =
+        fields.map(f => `<tr><td>${f.name}</td><td>${f.size_acres ?? ""}</td></tr>`).join("");
+
+      qs("cropsTable").querySelector("tbody").innerHTML =
+        crops.map(c => `<tr><td>${c.crop_name}</td><td>${c.variety ?? ""}</td><td>${c.unit_default}</td></tr>`).join("");
+
+      qs("p_field").innerHTML = fields.map(f => `<option value="${f.id}">${f.name}</option>`).join("");
+      qs("p_crop").innerHTML = crops.map(c => `<option value="${c.id}">${c.crop_name}${c.variety ? " ("+c.variety+")":""}</option>`).join("");
+
+     qs("plantingsTable").querySelector("tbody").innerHTML =
+  plantings.map(p => `<tr>
+    <td>${p.planting_date}</td>
+    <td>${p.field_name}</td>
+    <td>${p.crop_name}</td>
+    <td>${p.status}</td>
+    <td>
+      <button class="danger" data-del="${p.id}">Delete</button>
+    </td>
+  </tr>`).join("");
+
+      qs("h_planting").innerHTML = plantings.map(p => `<option value="${p.id}">${p.planting_date} - ${p.field_name} - ${p.crop_name}</option>`).join("");
+    }
+
+    qs("addField").onclick = async () => {
+      await api("/api/fields", { method:"POST", body:{ name: qs("field_name").value, size_acres: qs("field_size").value }});
+      qs("field_name").value = ""; qs("field_size").value = "";
+      refresh();
+    };
+
+    qs("addCrop").onclick = async () => {
+      await api("/api/crops", { method:"POST", body:{ crop_name: qs("crop_name").value, variety: qs("crop_variety").value, unit_default: qs("crop_unit").value }});
+      qs("crop_name").value=""; qs("crop_variety").value="";
+      refresh();
+    };
+
+    qs("addPlanting").onclick = async () => {
+      await api("/api/plantings", { method:"POST", body:{
+        field_id: Number(qs("p_field").value),
+        crop_id: Number(qs("p_crop").value),
+        planting_date: qs("p_date").value,
+        seed_source: qs("p_seed").value,
+        quantity_planted: Number(qs("p_qty").value),
+        quantity_unit: "seed",
+        status: "planted"
+      }});
+      refresh();
+    };
+    
+    qs("plantingsTable").addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-del]");
+  if (!btn) return;
+
+  const id = btn.getAttribute("data-del");
+
+  if (!confirm("Delete this planting?")) return;
+
+  try {
+    await api(`/api/plantings/${id}`, { method: "DELETE" });
+    await refresh();  // reload everything
+  } catch (err) {
+    alert(err.message || "Delete failed");
+  }
+});
+
+    qs("addHarvest").onclick = async () => {
+      try{
+        await api("/api/harvests", { method:"POST", body:{
+          planting_id: Number(qs("h_planting").value),
+          harvest_date: qs("h_date").value,
+          quantity: Number(qs("h_qty").value),
+          unit: qs("h_unit").value
+        }});
+        qs("msg").textContent = "✅ Harvest saved and stock was added (movement IN).";
+      }catch(e){
+        qs("msg").textContent = "❌ " + e.message;
+      }
+    };
+
+    refresh();
+  </script>
+</body>
+</html>
