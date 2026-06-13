@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const SCHEMA_FILE = path.join(__dirname, "schema.sql");
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
 
 const app = express();
